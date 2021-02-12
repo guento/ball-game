@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import commons.Point
 import kotlin.random.Random
 
 data class PieceData(val game: BallGame) {
@@ -20,7 +21,7 @@ data class PieceData(val game: BallGame) {
     }
 
     var status by mutableStateOf(EMPTY)
-    var color by mutableStateOf( Color.Red)
+    var color by mutableStateOf( Color.Gray)
 
     fun click(location: Point) {
         // todo: change click handler
@@ -41,14 +42,16 @@ data class PieceData(val game: BallGame) {
  */
 val colors: Map<Int, Color> = mapOf(
     0 to Color.Red,
-    1 to Color.Green,
+    1 to Color(0x00, 0xAF, 0x00, 0xff),
     2 to Color.Blue,
-    3 to Color.Yellow,
-    4 to Color.Cyan,
+    3 to Color(0xFF, 0xA0, 0x00),
+    4 to Color(0x00, 0xAA, 0xFF),
     5 to Color.Magenta,
 )
 fun getRandomColor(paletteSize: Int): Color {
-    require(paletteSize < colors.size)
+    require(paletteSize <= colors.size) {
+        "Requested number of colors[$paletteSize] exceeds maximumColors[${colors.size}]"
+    }
     return colors[Random.nextInt(0, paletteSize)]!!
 }
 
@@ -77,11 +80,6 @@ fun BallGame.view() {
         }
     }
 }
-
-data class Point(
-    val x: Int,
-    val y: Int,
-)
 
 @Composable
 fun Piece(location: Point, boxSize: Dp, piece: PieceData) {

@@ -36,7 +36,7 @@ fun goCoBottomBar() {
 
 @Composable
 fun goCoBodyContent() {
-    val game = remember { BallGame(10,10,40, 4) }
+    val game = remember { BallGame(10,10,40, 6) }
     Column(
         modifier = Modifier
             .fillMaxHeight()
