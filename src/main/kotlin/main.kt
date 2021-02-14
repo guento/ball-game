@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 
 import androidx.compose.ui.unit.dp
+import mu.KotlinLogging
 
 fun main() = Window(
     title = "GoCo"
@@ -47,7 +48,7 @@ fun goCoBodyContent() {
         game.view()
         Row {
             Button(
-                modifier = Modifier.fillMaxWidth(),
+//                modifier = Modifier.fillMaxWidth(),
                 onClick = { game.reset() },
             ) {
                 Text("Start")
