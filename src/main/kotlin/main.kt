@@ -4,9 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 import androidx.compose.ui.unit.dp
+import commons.GameState
 import mu.KotlinLogging
 
 fun main() = Window(
@@ -37,7 +39,7 @@ fun goCoBottomBar() {
 
 @Composable
 fun goCoBodyContent() {
-    val game = remember { BallGame(10,10,40, 6) }
+    val game = remember { BallGame(10, 10, 40, 6) }
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -45,13 +47,25 @@ fun goCoBodyContent() {
             .background(MaterialTheme.colors.surface)
             .padding(24.dp)
     ) {
-        game.view()
+        Box {
+            game.view()
+            if (game.state == GameState.SELECTED) Text(game.scoreIncrementPreview.toString(), modifier = Modifier.align(Alignment.Center))
+        }
         Row {
             Button(
-//                modifier = Modifier.fillMaxWidth(),
-                onClick = { game.reset() },
+                onClick = {
+                    when (game.state) {
+                        GameState.STARTED -> game.stop()
+                        GameState.SELECTED -> game.stop()
+                        GameState.STOPPED -> game.start()
+                    }
+                },
             ) {
-                Text("Start")
+                when (game.state) {
+                    GameState.STARTED -> Text("Stop")
+                    GameState.STOPPED -> Text("Start")
+                    GameState.SELECTED -> Text("Stop")
+                }
             }
         }
     }
