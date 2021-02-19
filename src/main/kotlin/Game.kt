@@ -1,12 +1,13 @@
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -267,9 +268,41 @@ fun BallGame.pieceFromPoint(p: Point) = matrix[indexFromPoint(p)]
 
 @Composable
 fun BallGame.view() {
-    Box(modifier = Modifier.size(pieceSize.dp * colsCount, pieceSize.dp * rowsCount)) {
-        matrix.forEachIndexed { index, field ->
-            Piece(pointFromIndex(index), pieceSize.dp, field)
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .fillMaxWidth()
+            .background(MaterialTheme.colors.surface)
+            .padding(24.dp)
+    ) {
+        Row(modifier = Modifier.align(Alignment.End)) {
+            Text("$score")
+        }
+        Box {
+            Box(modifier = Modifier.size(pieceSize.dp * colsCount, pieceSize.dp * rowsCount)) {
+                matrix.forEachIndexed { index, field ->
+                    Piece(pointFromIndex(index), pieceSize.dp, field)
+                }
+            }
+            if (state == GameState.SELECTED) Text(scoreIncrementPreview.toString(), modifier = Modifier.align(
+                Center))
+        }
+        Row {
+            Button(
+                onClick = {
+                    when (state) {
+                        GameState.STARTED -> stop()
+                        GameState.SELECTED -> stop()
+                        GameState.STOPPED -> start()
+                    }
+                },
+            ) {
+                when (state) {
+                    GameState.STARTED -> Text("Stop")
+                    GameState.STOPPED -> Text("Start")
+                    GameState.SELECTED -> Text("Stop")
+                }
+            }
         }
     }
 }
