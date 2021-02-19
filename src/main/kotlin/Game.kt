@@ -110,9 +110,10 @@ fun BallGame.click(p: Point) {
         GameState.SELECTED -> {
             state = GameState.STARTED
             if (pieceFromPoint(p).selected) {
-                score += scoreIncrementPreview
                 removeSelected()
                 removeEmptyColumns()
+                checkForBonusMatrix()
+                checkGameOver()
             } else {
                 clearSelection()
             }
@@ -161,7 +162,45 @@ fun BallGame.removeEmptyColumns() {
         }
 }
 
-fun Int.times(f: (Int) -> Unit ): Unit {
+fun BallGame.checkForBonusMatrix() {
+    if (matrix.all { it.active == PieceData.IN_ACTIVE }) {
+        start()
+    }
+}
+
+fun BallGame.checkGameOver() {
+    fun hasSameColor(p: Point, pc: Point): Boolean {
+        if (pc.x !in 0 until rowsCount || pc.y !in 0 until colsCount || !pieceFromPoint(p).active || !pieceFromPoint(pc).active) return false
+        return pieceFromPoint(p).color == pieceFromPoint(pc).color
+    }
+
+    var foundSameColors = false
+    for (x in (0 until rowsCount)) {
+        for (y in (0 until colsCount)) {
+            val p = Point(x, y)
+            val piece = pieceFromPoint(p)
+
+            logger.trace {
+                "$p $piece right ${hasSameColor(p, p.right())} left ${
+                    hasSameColor(p,
+                        p.left())
+                } above ${hasSameColor(p, p.above())} below ${hasSameColor(p, p.below())}"
+            }
+
+            foundSameColors =
+                hasSameColor(p, p.right()) || hasSameColor(p, p.left()) || hasSameColor(p, p.above()) || hasSameColor(p,
+                    p.below())
+            if (foundSameColors) break
+        }
+        if (foundSameColors) break
+    }
+
+    if (!foundSameColors) {
+        logger.debug { "no further moves possible" }
+    }
+}
+
+fun Int.times(f: (Int) -> Unit): Unit {
     if (this != 0) (0 until this).forEach { f(it) }
 }
 
@@ -220,7 +259,7 @@ fun BallGame.select(p: Point) {
     }
 }
 
-fun BallGame.scoreOnSelected(): Int = 2.0.pow(selection.size - 1).toInt()
+fun BallGame.scoreOnSelected(): Int = selection.size * (selection.size - 1)
 
 fun BallGame.pointFromIndex(i: Int) = Point(i / rowsCount, i % rowsCount)
 fun BallGame.indexFromPoint(p: Point) = p.x * rowsCount + p.y
