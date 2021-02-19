@@ -39,7 +39,7 @@ fun goCoBottomBar() {
 
 @Composable
 fun goCoBodyContent() {
-    val game = remember { BallGame(10, 10, 40, 6) }
+    val game = remember { BallGame(true,10, 10, 40, 6) }
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -47,6 +47,9 @@ fun goCoBodyContent() {
             .background(MaterialTheme.colors.surface)
             .padding(24.dp)
     ) {
+        Row(modifier = Modifier.align(Alignment.End)) {
+            Text("${game.score}")
+        }
         Box {
             game.view()
             if (game.state == GameState.SELECTED) Text(game.scoreIncrementPreview.toString(), modifier = Modifier.align(Alignment.Center))

@@ -17,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import commons.*
 import mu.KotlinLogging
 import java.util.*
+import kotlin.math.absoluteValue
 import kotlin.math.pow
+import kotlin.math.sign
 import kotlin.random.Random
 
 val logger = KotlinLogging.logger {}
@@ -72,6 +74,7 @@ fun getRandomColor(paletteSize: Int): Color {
 }
 
 data class BallGame(
+    val leftToRight: Boolean,
     val rowsCount: Int,
     val colsCount: Int,
     val pieceSize: Int,
@@ -98,6 +101,7 @@ fun BallGame.stop() {
     scoreIncrementPreview = 0
     selection = emptyArray()
     state = GameState.STOPPED
+    score = 0
 }
 
 fun BallGame.click(p: Point) {
@@ -108,6 +112,7 @@ fun BallGame.click(p: Point) {
             if (pieceFromPoint(p).selected) {
                 score += scoreIncrementPreview
                 removeSelected()
+                removeEmptyColumns()
             } else {
                 clearSelection()
             }
@@ -119,28 +124,45 @@ fun BallGame.click(p: Point) {
 fun BallGame.removeSelected() {
     logger.debug { "removeSelected" }
 
-//    val selectedPieces = selection.map { Pair(pieceFromPoint(it),it) }
-//
-//    selectedPieces.forEach { selectedPiece ->
-//        var deleteIndex = 0
-//        matrix.forEachIndexed { index, pieceData -> if (pieceData.identity == selectedPiece.first.identity) deleteIndex = index }
-//        matrix.removeAt(deleteIndex)
-//        matrix.add(indexFromPoint(Point(selectedPiece.second.x,0)), PieceData(selectedPiece.first.game))
-//    }
     selection
         .map { Pair(pieceFromPoint(it), it) }
         .forEach { selectedPiece ->
-            val deleteIndex = matrix
+            matrix
                 .mapIndexed { index, pieceData -> Pair(index, pieceData) }
                 .find { it.second.identity == selectedPiece.first.identity }
-            deleteIndex?.let { matrix.removeAt(it.first) }
+                ?.let { matrix.removeAt(it.first) }
             matrix.add(indexFromPoint(Point(selectedPiece.second.x, 0)), PieceData(selectedPiece.first.game))
         }
+    score += scoreOnSelected()
     state = GameState.STARTED
 }
 
-fun BallGame.removePoint(p: Point) {
-    matrix.add(1, pieceFromPoint(p))
+fun BallGame.removeEmptyColumns() {
+    val result = matrix
+        .mapIndexed { index, pieceData -> Pair(pointFromIndex(index), pieceData) }
+        .groupBy { it.first.x }
+        .mapValues { resultMapEntry -> resultMapEntry.value.all { resultMapEntryValue -> resultMapEntryValue.second.active == PieceData.IN_ACTIVE } }
+        .filter { it.value }
+        .mapValues {
+            logger.debug { "** row ${it.key} empty = ${it.value}" }
+            (0 until rowsCount).map { y -> pieceFromPoint(Point(it.key, y)).identity }
+        }
+        .map { uuidList ->
+            uuidList.value.forEach { identity ->
+                matrix
+                    .mapIndexed { index, pieceData -> Pair(index, pieceData) }
+                    .find { it.second.identity == identity }
+                    ?.let { matrix.removeAt(it.first) }
+            }
+            if (leftToRight)
+                10.times { matrix.add(0, PieceData(this)) }
+            else
+                10.times { matrix.add(PieceData(this)) }
+        }
+}
+
+fun Int.times(f: (Int) -> Unit ): Unit {
+    if (this != 0) (0 until this).forEach { f(it) }
 }
 
 fun BallGame.clearSelection() {
@@ -190,13 +212,15 @@ fun BallGame.select(p: Point) {
     )
     logger.debug { "selection size = ${selection.size}" }
 
-    if (selection.size < 1)
+    if (selection.size < 2)
         pd.selected = false
     else {
         state = GameState.SELECTED
-        scoreIncrementPreview = 2.0.pow(selection.size - 1).toInt()
+        scoreIncrementPreview = scoreOnSelected()
     }
 }
+
+fun BallGame.scoreOnSelected(): Int = 2.0.pow(selection.size - 1).toInt()
 
 fun BallGame.pointFromIndex(i: Int) = Point(i / rowsCount, i % rowsCount)
 fun BallGame.indexFromPoint(p: Point) = p.x * rowsCount + p.y
