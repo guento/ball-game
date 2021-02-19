@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import commons.*
 import mu.KotlinLogging
+import java.util.*
 import kotlin.math.pow
 import kotlin.random.Random
 
@@ -29,6 +30,7 @@ data class PieceData(val game: BallGame) {
         val resetColor = Color.LightGray
     }
 
+    var identity = UUID.randomUUID()
     var selected by mutableStateOf(false)
     var active by mutableStateOf(IN_ACTIVE)
     var color by mutableStateOf(resetColor)
@@ -117,31 +119,24 @@ fun BallGame.click(p: Point) {
 fun BallGame.removeSelected() {
     logger.debug { "removeSelected" }
 
-    selection.forEach {
-        val index = indexFromPoint(Point(it.x,0))
-        val piece = pieceFromPoint(it)
-
-        logger.debug { "remove $piece"}
-        matrix.remove(piece)
-
-        logger.debug { "add empty pieces at $index" }
-        matrix.add(index, PieceData(this))
-    }
-
-    state = GameState.STARTED
-
-//    (0 until colsCount).forEach { x ->
-//        logger.debug { "x = $x" }
-//        ((rowsCount - 1) downTo 0).forEach { y ->
-//            val point = Point(x,y)
-//            logger.debug { "check $point" }
-//            val p = pieceFromPoint(point)
-//            if (p.selected) {
-//                matrix.add(indexFromPoint(Point(x,0)), PieceData(this))
-//                matrix.remove(p)
-//            }
-//        }
+//    val selectedPieces = selection.map { Pair(pieceFromPoint(it),it) }
+//
+//    selectedPieces.forEach { selectedPiece ->
+//        var deleteIndex = 0
+//        matrix.forEachIndexed { index, pieceData -> if (pieceData.identity == selectedPiece.first.identity) deleteIndex = index }
+//        matrix.removeAt(deleteIndex)
+//        matrix.add(indexFromPoint(Point(selectedPiece.second.x,0)), PieceData(selectedPiece.first.game))
 //    }
+    selection
+        .map { Pair(pieceFromPoint(it), it) }
+        .forEach { selectedPiece ->
+            val deleteIndex = matrix
+                .mapIndexed { index, pieceData -> Pair(index, pieceData) }
+                .find { it.second.identity == selectedPiece.first.identity }
+            deleteIndex?.let { matrix.removeAt(it.first) }
+            matrix.add(indexFromPoint(Point(selectedPiece.second.x, 0)), PieceData(selectedPiece.first.game))
+        }
+    state = GameState.STARTED
 }
 
 fun BallGame.removePoint(p: Point) {
@@ -195,7 +190,7 @@ fun BallGame.select(p: Point) {
     )
     logger.debug { "selection size = ${selection.size}" }
 
-    if (selection.size < 2)
+    if (selection.size < 1)
         pd.selected = false
     else {
         state = GameState.SELECTED
