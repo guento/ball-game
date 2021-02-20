@@ -14,13 +14,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import commons.*
 import mu.KotlinLogging
 import java.util.*
-import kotlin.math.absoluteValue
-import kotlin.math.pow
-import kotlin.math.sign
 import kotlin.random.Random
 
 val logger = KotlinLogging.logger {}
@@ -157,9 +155,9 @@ fun BallGame.removeEmptyColumns() {
                     ?.let { matrix.removeAt(it.first) }
             }
             if (leftToRight)
-                10.times { matrix.add(0, PieceData(this)) }
+                rowsCount.times { matrix.add(0, PieceData(this)) }
             else
-                10.times { matrix.add(PieceData(this)) }
+                rowsCount.times { matrix.add(PieceData(this)) }
         }
 }
 
@@ -276,7 +274,8 @@ fun BallGame.view() {
             .padding(24.dp)
     ) {
         Row(modifier = Modifier.align(Alignment.End)) {
-            Text("$score")
+            Text("Score")
+            Text("$score", fontSize = TextUnit(200))
         }
         Box {
             Box(modifier = Modifier.size(pieceSize.dp * colsCount, pieceSize.dp * rowsCount)) {
