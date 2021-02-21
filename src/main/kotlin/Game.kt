@@ -14,8 +14,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import commons.*
 import mu.KotlinLogging
 import java.util.*
@@ -31,7 +31,7 @@ data class PieceData(val game: BallGame) {
         val resetColor = Color.LightGray
     }
 
-    var identity = UUID.randomUUID()
+    val identity: UUID? = UUID.randomUUID()
     var selected by mutableStateOf(false)
     var active by mutableStateOf(IN_ACTIVE)
     var color by mutableStateOf(resetColor)
@@ -41,13 +41,13 @@ data class PieceData(val game: BallGame) {
         game.click(p)
     }
 
-    fun reset() = setState(false, ACTIVE, resetColor)
+    fun reset() = setState(resetColor)
 
-    fun randomize() = setState(false, ACTIVE, getRandomColor(game.paletteSize))
+    fun randomize() = setState(getRandomColor(game.paletteSize))
 
-    private fun setState(s: Boolean, a: Boolean, c: Color) {
-        selected = s
-        active = a
+    private fun setState(c: Color) {
+        selected = false
+        active = ACTIVE
         color = c
     }
 }
@@ -58,7 +58,7 @@ data class PieceData(val game: BallGame) {
  */
 val colors: Map<Int, Color> = mapOf(
     0 to Color.Red,
-    1 to Color(0x00, 0xAF, 0x00, 0xff),
+    1 to Color(0x00, 0xAF, 0x00),
     2 to Color.Blue,
     3 to Color(0xFF, 0xA0, 0x00),
     4 to Color(0x00, 0xAA, 0xFF),
@@ -74,8 +74,8 @@ fun getRandomColor(paletteSize: Int): Color {
 
 data class BallGame(
     val leftToRight: Boolean,
-    val rowsCount: Int,
-    val colsCount: Int,
+    val xMax: Int,
+    val yMax: Int,
     val pieceSize: Int,
     val paletteSize: Int,
 ) {
@@ -86,12 +86,14 @@ data class BallGame(
     val matrix = mutableStateListOf<PieceData>()
 
     init {
-        repeat(rowsCount * colsCount) { matrix.add(PieceData(this)) }
+        repeat(yMax * xMax) { matrix.add(PieceData(this)) }
+        start()
     }
 }
 
-fun BallGame.start() {
+fun BallGame.start(s: Int = 0) {
     matrix.forEach { it.randomize() }
+    score = s
     state = GameState.STARTED
 }
 
@@ -145,7 +147,7 @@ fun BallGame.removeEmptyColumns() {
         .filter { it.value }
         .mapValues {
             logger.debug { "** row ${it.key} empty = ${it.value}" }
-            (0 until rowsCount).map { y -> pieceFromPoint(Point(it.key, y)).identity }
+            (0 until yMax).map { y -> pieceFromPoint(Point(it.key, y)).identity }
         }
         .map { uuidList ->
             uuidList.value.forEach { identity ->
@@ -155,27 +157,27 @@ fun BallGame.removeEmptyColumns() {
                     ?.let { matrix.removeAt(it.first) }
             }
             if (leftToRight)
-                rowsCount.times { matrix.add(0, PieceData(this)) }
+                yMax.times { matrix.add(0, PieceData(this)) }
             else
-                rowsCount.times { matrix.add(PieceData(this)) }
+                yMax.times { matrix.add(PieceData(this)) }
         }
 }
 
 fun BallGame.checkForBonusMatrix() {
     if (matrix.all { it.active == PieceData.IN_ACTIVE }) {
-        start()
+        start(score)
     }
 }
 
 fun BallGame.checkGameOver() {
     fun hasSameColor(p: Point, pc: Point): Boolean {
-        if (pc.x !in 0 until rowsCount || pc.y !in 0 until colsCount || !pieceFromPoint(p).active || !pieceFromPoint(pc).active) return false
+        if (pc.x !in 0 until xMax || pc.y !in 0 until yMax || !pieceFromPoint(p).active || !pieceFromPoint(pc).active) return false
         return pieceFromPoint(p).color == pieceFromPoint(pc).color
     }
 
     var foundSameColors = false
-    for (x in (0 until rowsCount)) {
-        for (y in (0 until colsCount)) {
+    for (x in (0 until xMax)) {
+        for (y in (0 until yMax)) {
             val p = Point(x, y)
             val piece = pieceFromPoint(p)
 
@@ -195,7 +197,7 @@ fun BallGame.checkGameOver() {
     }
 
     if (!foundSameColors) {
-        logger.debug { "no further moves possible" }
+        state = GameState.GAME_OVER
     }
 }
 
@@ -214,7 +216,7 @@ fun BallGame.clearSelection() {
 fun BallGame.select(p: Point) {
     fun findNeighbour(parent: Point, me: Point): Array<out Point> {
         // drop processing if outside x or y range
-        if (me.x !in 0 until rowsCount || me.y !in 0 until colsCount || !pieceFromPoint(p).active) return emptyArray()
+        if (me.x !in 0 until xMax || me.y !in 0 until yMax || !pieceFromPoint(p).active) return emptyArray()
         if (!pieceFromPoint(p).active) return emptyArray()
 
         val cdParent = pieceFromPoint(parent)
@@ -260,8 +262,8 @@ fun BallGame.select(p: Point) {
 
 fun BallGame.scoreOnSelected(): Int = selection.size * (selection.size - 1)
 
-fun BallGame.pointFromIndex(i: Int) = Point(i / rowsCount, i % rowsCount)
-fun BallGame.indexFromPoint(p: Point) = p.x * rowsCount + p.y
+fun BallGame.pointFromIndex(i: Int) = Point(i / yMax, i % yMax)
+fun BallGame.indexFromPoint(p: Point) = p.x * yMax + p.y
 fun BallGame.pieceFromPoint(p: Point) = matrix[indexFromPoint(p)]
 
 @Composable
@@ -275,16 +277,33 @@ fun BallGame.view() {
     ) {
         Row(modifier = Modifier.align(Alignment.End)) {
             Text("Score")
-            Text("$score", fontSize = TextUnit(200))
+            Text("$score", fontSize = 50.sp)
         }
         Box {
-            Box(modifier = Modifier.size(pieceSize.dp * colsCount, pieceSize.dp * rowsCount)) {
+            Box(modifier = Modifier.size(pieceSize.dp * xMax, pieceSize.dp * yMax)) {
                 matrix.forEachIndexed { index, field ->
                     Piece(pointFromIndex(index), pieceSize.dp, field)
                 }
             }
-            if (state == GameState.SELECTED) Text(scoreIncrementPreview.toString(), modifier = Modifier.align(
-                Center))
+
+            if (state == GameState.SELECTED)
+                Text(scoreIncrementPreview.toString(), modifier = Modifier.align(Center), fontSize = 50.sp)
+
+            if (state == GameState.GAME_OVER) {
+                Box(modifier = Modifier.size(300.dp, 150.dp).background(Color(0xFF, 0xA0, 0x00))
+                    .align(Alignment.Center)) {
+                    Column(modifier = Modifier.align(Center)) {
+                        Text("Game Over", fontSize = 50.sp)
+                        Button(
+                            onClick = {
+                                start()
+                            },
+                        ) {
+                            Text("New Game")
+                        }
+                    }
+                }
+            }
         }
         Row {
             Button(
@@ -324,7 +343,15 @@ fun Piece(location: Point, boxSize: Dp, piece: PieceData) {
             if (logger.isDebugEnabled) {
                 Text("${location.x},${location.y}", modifier = Modifier.align(Center))
             }
-            if (piece.selected) Text("O", modifier = Modifier.align(Center))
+            if (piece.selected) {
+                Box(
+                    Modifier
+                        .size(boxSize, boxSize)
+                        .background(Color(0xff, 0xff, 0xff, 0x7F))
+                        .clickable(onClick = { piece.click(location) })
+                ) {
+                }
+            }
         }
     }
 }

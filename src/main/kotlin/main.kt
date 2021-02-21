@@ -4,12 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
 import androidx.compose.ui.unit.dp
-import commons.GameState
-import mu.KotlinLogging
 
 fun main() = Window(
     title = "GoCo"
@@ -39,7 +36,7 @@ fun goCoBottomBar() {
 
 @Composable
 fun goCoBodyContent() {
-    val game = remember { BallGame(true,10, 10, 40, 6) }
+    val game = remember { BallGame(true,10, 10, 40, 4) }
     game.view()
 }
 

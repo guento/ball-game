@@ -1,5 +1,5 @@
 package commons
 
 enum class GameState {
-    STARTED, STOPPED, SELECTED
+    STARTED, STOPPED, SELECTED, GAME_OVER, CONFIRMATION
 }
