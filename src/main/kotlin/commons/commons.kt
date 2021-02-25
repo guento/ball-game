@@ -13,3 +13,7 @@ fun Point.below(): Point = Point(x, y+1)
 enum class AppError(code: Int) {
     NO_PIECE_DATA_AT_LOCATION(0x00000001)
 }
+
+fun Int.times(f: (Int) -> Unit): Unit {
+    if (this != 0) (0 until this).forEach { f(it) }
+}

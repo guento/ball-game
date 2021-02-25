@@ -1,21 +1,5 @@
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Button
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Center
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import commons.*
 import mu.KotlinLogging
 import java.util.*
@@ -81,6 +65,7 @@ data class BallGame(
 ) {
     var selection: Array<Point> = emptyArray()
     var score by mutableStateOf(0)
+    var highScore = mutableStateListOf<Score>()
     var scoreIncrementPreview by mutableStateOf(0)
     var state by mutableStateOf(GameState.STOPPED)
     val matrix = mutableStateListOf<PieceData>()
@@ -113,8 +98,10 @@ fun BallGame.click(p: Point) {
             if (pieceFromPoint(p).selected) {
                 removeSelected()
                 removeEmptyColumns()
+
+                // check game state
                 checkForBonusMatrix()
-                checkGameOver()
+                if (state != GameState.CONFIRM_CONTINUE_OR_200PTS) checkGameOver()
             } else {
                 clearSelection()
             }
@@ -165,7 +152,7 @@ fun BallGame.removeEmptyColumns() {
 
 fun BallGame.checkForBonusMatrix() {
     if (matrix.all { it.active == PieceData.IN_ACTIVE }) {
-        start(score)
+        state = GameState.CONFIRM_CONTINUE_OR_200PTS
     }
 }
 
@@ -199,10 +186,6 @@ fun BallGame.checkGameOver() {
     if (!foundSameColors) {
         state = GameState.GAME_OVER
     }
-}
-
-fun Int.times(f: (Int) -> Unit): Unit {
-    if (this != 0) (0 until this).forEach { f(it) }
 }
 
 fun BallGame.clearSelection() {
@@ -266,92 +249,7 @@ fun BallGame.pointFromIndex(i: Int) = Point(i / yMax, i % yMax)
 fun BallGame.indexFromPoint(p: Point) = p.x * yMax + p.y
 fun BallGame.pieceFromPoint(p: Point) = matrix[indexFromPoint(p)]
 
-@Composable
-fun BallGame.view() {
-    Column(
-        modifier = Modifier
-            .fillMaxHeight()
-            .fillMaxWidth()
-            .background(MaterialTheme.colors.surface)
-            .padding(24.dp)
-    ) {
-        Row(modifier = Modifier.align(Alignment.End)) {
-            Text("Score")
-            Text("$score", fontSize = 50.sp)
-        }
-        Box {
-            Box(modifier = Modifier.size(pieceSize.dp * xMax, pieceSize.dp * yMax)) {
-                matrix.forEachIndexed { index, field ->
-                    Piece(pointFromIndex(index), pieceSize.dp, field)
-                }
-            }
-
-            if (state == GameState.SELECTED)
-                Text(scoreIncrementPreview.toString(), modifier = Modifier.align(Center), fontSize = 50.sp)
-
-            if (state == GameState.GAME_OVER) {
-                Box(modifier = Modifier.size(300.dp, 150.dp).background(Color(0xFF, 0xA0, 0x00))
-                    .align(Alignment.Center)) {
-                    Column(modifier = Modifier.align(Center)) {
-                        Text("Game Over", fontSize = 50.sp)
-                        Button(
-                            onClick = {
-                                start()
-                            },
-                        ) {
-                            Text("New Game")
-                        }
-                    }
-                }
-            }
-        }
-        Row {
-            Button(
-                onClick = {
-                    when (state) {
-                        GameState.STARTED -> stop()
-                        GameState.SELECTED -> stop()
-                        GameState.STOPPED -> start()
-                    }
-                },
-            ) {
-                when (state) {
-                    GameState.STARTED -> Text("Stop")
-                    GameState.STOPPED -> Text("Start")
-                    GameState.SELECTED -> Text("Stop")
-                }
-            }
-        }
-    }
+fun BallGame.storeHighScore(score: Int) {
+    highScore.add(Score("got", score))
 }
 
-@Composable
-fun Piece(location: Point, boxSize: Dp, piece: PieceData) {
-    Box(
-        Modifier
-            .offset(boxSize * location.x, boxSize * location.y)
-            .shadow(30.dp)
-            .clip(CircleShape)
-            .border(2.dp, Color.Gray, CircleShape)
-    ) {
-        Box(
-            Modifier
-                .size(boxSize, boxSize)
-                .background(piece.color)
-                .clickable(onClick = { piece.click(location) })
-        ) {
-            if (logger.isDebugEnabled) {
-                Text("${location.x},${location.y}", modifier = Modifier.align(Center))
-            }
-            if (piece.selected) {
-                Box(
-                    Modifier
-                        .size(boxSize, boxSize)
-                        .background(Color(0xff, 0xff, 0xff, 0x7F))
-                        .clickable(onClick = { piece.click(location) })
-                ) {
-                }
-            }
-        }
-    }
-}
