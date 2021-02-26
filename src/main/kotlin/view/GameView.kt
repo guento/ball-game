@@ -63,7 +63,7 @@ fun BallGame.matchFieldView() {
     ) {
         Row(modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.End)) {
             Text("Score")
-            Text("$score".padStart(6,'0'), fontSize = 50.sp)
+            Text("$score".padStart(6, '0'), fontSize = 50.sp)
         }
         Box {
             Box(modifier = androidx.compose.ui.Modifier.size(pieceSize.dp * xMax, pieceSize.dp * yMax)) {
@@ -100,21 +100,13 @@ fun BallGame.matchFieldView() {
             }
         }
 
-        Row {
+        Row(modifier = Modifier.padding(0.dp, 20.dp)) {
             Button(
                 onClick = {
-                    when (state) {
-                        commons.GameState.STARTED -> stop()
-                        commons.GameState.SELECTED -> stop()
-                        commons.GameState.STOPPED -> start()
-                    }
+                    start()
                 },
             ) {
-                when (state) {
-                    commons.GameState.STARTED -> Text("Stop")
-                    commons.GameState.STOPPED -> Text("Start")
-                    commons.GameState.SELECTED -> Text("Stop")
-                }
+                Text("Reset")
             }
         }
     }
