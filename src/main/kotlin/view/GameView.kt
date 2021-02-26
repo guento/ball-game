@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import commons.dialog.Action
@@ -16,7 +20,40 @@ import stop
 import storeHighScore
 
 @Composable
-fun BallGame.view() {
+fun BallGame.highScoreView() {
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .preferredWidth(250.dp)
+            .background(Color.LightGray)
+    ) {
+        Row(modifier = Modifier.padding(25.dp, 10.dp).fillMaxWidth()) {
+            Text(textAlign = TextAlign.Start, fontSize = 40.sp, text = "High")
+            Spacer(Modifier.weight(1f))
+            Text(fontSize = 40.sp, text = "Score")
+        }
+        if (highScore.size == 0) {
+            Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text("---")
+            }
+        } else {
+            highScore.sortByDescending { it.score }
+            highScore
+                .take(10)
+                .forEach {
+                    Row(modifier = Modifier.padding(25.dp, 10.dp).fillMaxWidth()) {
+                        Text(textAlign = TextAlign.Start, fontSize = 20.sp, text = it.name)
+                        Spacer(Modifier.weight(1f))
+                        Text(fontSize = 20.sp, text = "${it.score}".padStart(6, '0'))
+                    }
+                }
+        }
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun BallGame.matchFieldView() {
     Column(
         modifier = androidx.compose.ui.Modifier
             .fillMaxHeight()

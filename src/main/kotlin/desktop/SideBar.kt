@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -76,5 +77,17 @@ fun goCoRightSideBar(g: BallGame) {
                 }
         }
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+@Composable
+fun sideBar(width: Dp, background: Color, content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxHeight()
+            .preferredWidth(width)
+            .background(background)
+    ) {
+        content()
     }
 }
