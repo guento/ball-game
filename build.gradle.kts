@@ -27,6 +27,7 @@ dependencies {
     implementation("io.arrow-kt:arrow-fx:0.11.0")
     implementation("io.arrow-kt:arrow-optics:0.11.0")
     implementation("io.arrow-kt:arrow-syntax:0.11.0")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.9.8")
     implementation(compose.desktop.currentOs)
     implementation(kotlin("stdlib-jdk8"))
 }

@@ -1,7 +1,11 @@
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import commons.*
 import mu.KotlinLogging
+import java.io.File
+import java.io.FileOutputStream
 import java.util.*
 import kotlin.random.Random
 
@@ -224,7 +228,7 @@ fun BallGame.select(p: Point) {
     val pd = pieceFromPoint(p)
 
     // set selected
-    pd.selected = true;
+    pd.selected = true
 
     selection = arrayOf(
         p,
@@ -251,5 +255,20 @@ fun BallGame.pieceFromPoint(p: Point) = matrix[indexFromPoint(p)]
 
 fun BallGame.storeHighScore(score: Int) {
     highScore.add(Score("got", score))
+    highScore.sortByDescending { it.score }
+    val saveList = highScore.take(10)
+
+    val mapper = ObjectMapper().registerModule(KotlinModule())
+    val saveListJsonString = mapper.writeValueAsString(saveList)
+
+    logger.debug { saveListJsonString }
+
+    val dir = File("~/.ball-game/")
+    dir.mkdirs()
+    val file = File(dir, "highscore.json")
+
+    val fos = FileOutputStream(file)
+    fos.write(saveListJsonString.toByteArray())
+    fos.close()
 }
 
